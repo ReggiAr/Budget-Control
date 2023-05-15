@@ -1,0 +1,286 @@
+import sys
+from PyQt5.QtWidgets import QApplication,QDialog,QGridLayout, QMainWindow, QWidget, QComboBox, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QPushButton, QListWidget
+from PyQt5.QtCore import *
+from PyQt5.QtGui import QIntValidator, QFont
+from PyQt5 import QtCore
+import pickle
+import datetime
+
+class ExpenseTracker(QMainWindow):
+    def __init__(self):
+        super().__init__()
+        self.setWindowTitle("Expense Tracker")
+        self.setGeometry(200, 200, 400, 500)
+        self.setStyleSheet("background-color:#C7E5CC;")
+        
+        self.kategory=[]
+        self.budget=[]
+
+        self.kategorilist=QComboBox(self)
+        self.kategorilist.setStyleSheet("background-color:#ADD8E6")
+        self.listkategori=QListWidget(self)
+        self.listkategori.setStyleSheet("background-color:#ADD8E6")
+        self.totalbajet=QLineEdit(self)
+        self.totalbajet.setStyleSheet("background-color:#ADD8E6;")
+        self.listkategoricount=QListWidget(self)
+        self.listkategoricount.setStyleSheet("background-color:#ADD8E6")
+        self.listkategoribajet=QListWidget(self)
+        self.listkategoribajet.setStyleSheet("background-color:#ADD8E6")
+        self.save=QPushButton("SAVE",self)
+        self.save.setStyleSheet("background-color:#1B4D3E;")
+        self.reggi=QLabel("github.com/ReggiAr",self)
+        self.kategorilist.hide()
+        self.listkategori.hide()
+        self.totalbajet.hide()
+        self.listkategoricount.hide()
+        self.listkategoribajet.hide()
+
+
+        self.judul=QLabel("Monthly Budget Tracker",self)
+        self.judul.setFont(QFont("Helvetica",20))
+        self.remainingl=QLabel("Remaining Budget")
+        self.remaining=QLineEdit()
+        self.remaining.setStyleSheet("background-color:#ADD8E6;")
+        self.remaining.setFont(QFont("Helvetica",15))
+        self.editkategory=QPushButton(self)
+        self.editkategory.setStyleSheet("background-color:#1B4D3E;")
+        self.editkategory.setText("Edit Kategory")
+        self.editkategory.clicked.connect(self.editkategori)
+        self.pushinputexpense=QPushButton(self)
+        self.pushinputexpense.setStyleSheet("background-color:#1B4D3E;")
+        self.pushinputexpense.setText("Input Expense")
+        self.pushinputexpense.clicked.connect(self.inputexpense)        
+        self.expense=QListWidget(self)
+        self.expense.setStyleSheet("background-color:#ADD8E6")
+
+        self.layout=QVBoxLayout()
+        self.layout1=QHBoxLayout()
+        self.layout2=QHBoxLayout()
+        self.layout1.addWidget(self.editkategory)
+        self.layout1.addWidget(self.pushinputexpense)
+        self.layout2.addWidget(self.reggi)
+        self.layout2.addWidget(self.save)
+        self.layout.addWidget(self.judul)
+        self.layout.addWidget(self.remainingl)
+        self.layout.addWidget(self.remaining)
+        self.layout.addLayout(self.layout1)
+        self.layout.addWidget(self.expense)
+        self.layout.addLayout(self.layout2)
+
+        self.widget = QWidget()
+        self.widget.setLayout(self.layout)
+        self.setCentralWidget(self.widget)
+        self.save.clicked.connect(self.saved)
+    
+    def editkategori (self):
+        buka=QDialog(self)
+        buka.setWindowTitle("Edit Categories")
+        buka.setGeometry(700,200,820,400)
+
+        self.kategorilist.hide()
+        self.listkategori.show()
+        self.totalbajet.show()
+        self.listkategoricount.show()
+        self.listkategoribajet.show()
+        self.countadd = 0
+
+        self.tambahkategori=QLineEdit(buka)
+        self.tambahkategori.setStyleSheet("background-color:#ADD8E6")
+        self.tambahbudget=QLineEdit(buka)
+        self.tambahbudget.setStyleSheet("background-color:#ADD8E6")
+        validator=QIntValidator()
+        self.tambahbudget.setValidator(validator)
+        lkategory=QLabel("Add Category", buka)
+        lbudget=QLabel("Add Budget", buka)
+        self.inputkategori=QPushButton("Input New Category",buka)
+        self.inputkategori.setStyleSheet("background-color:#1B4D3E;")
+        self.inputkategori.clicked.connect(self.kategoribaru)
+
+        self.totalbajet.setFont(QFont("Helvetica",15))
+
+        self.hapuskategori=QPushButton("Delete Category",buka)
+        self.hapuskategori.setStyleSheet("background-color:#1B4D3E;")
+        self.hapuskategori.clicked.connect(self.delcategory)
+
+#aturposisi        
+        atur1=QVBoxLayout(buka)
+        atur2=QGridLayout(buka)
+        atur2.addWidget(lkategory,0,0)
+        atur2.addWidget(self.tambahkategori,0,1)
+        atur2.addWidget(lbudget,1,0)
+        atur2.addWidget(self.tambahbudget,1,1)
+        
+        list1=QHBoxLayout(buka)
+        list1.addWidget(self.listkategoricount,1)
+        list1.addWidget(self.listkategori,15)
+        list1.addWidget(self.listkategoribajet,20)
+
+        tombol=QHBoxLayout(buka)
+        tombol.addWidget(self.inputkategori)
+        tombol.addWidget(self.hapuskategori)
+
+        atur1.addLayout(atur2)
+        atur1.addLayout(tombol)
+        atur1.addWidget(self.totalbajet)
+        atur1.addLayout(list1)
+
+        buka.widget = QWidget(buka)
+        buka.widget.setLayout(atur1)
+        self.listkategoricount.itemClicked.connect(self.gaterow)
+       
+        buka.show()
+        
+    def inputexpense (self):
+        expenses=QDialog(self)
+        expenses.setWindowTitle("Input Expenses")
+        expenses.setGeometry(800,200,400,300)
+
+        self.kategorilist.show()
+        current_date=datetime.date.today()
+        hariini=current_date.strftime(' %d %B %Y')
+
+        judul=QLabel("Input your expenses",expenses)
+        judul.setFont(QFont("Helvetica", 15))
+
+        #TANGGAL
+        datel=QLabel(expenses)
+        datel.setText("Date")
+        datel.setFont(QFont("Helvetica",12))
+        
+        date=QLabel(expenses)
+        date.setFont(QFont("Helvetica",12))
+        date.setText(hariini)
+
+        #kategori
+        kategori =QLabel(expenses)
+        kategori.setText("Category")
+        kategori.setFont(QFont("Helvetica",12))
+
+        #expenses
+        totall=QLabel(expenses)
+        totall.setText("Total")
+        totall.setFont(QFont("Helvetica",12))
+
+        self.total=QLineEdit(expenses)
+        self.total.setFont(QFont("Helvetica",12))
+        self.total.setStyleSheet("background-color:#ADD8E6")
+
+        ketl=QLabel(expenses)
+        ketl.setText("Explanation")
+        ketl.setFont(QFont("Helvetica",12))
+
+        self.ket=QLineEdit(expenses)
+        self.ket.setFont(QFont("Helvetica",12))
+        self.ket.setStyleSheet("background-color:#ADD8E6")
+
+        addexpense=QPushButton(expenses)
+        addexpense.setStyleSheet("background-color:#1B4D3E;")
+        addexpense.setFont(QFont("Helvetica",12))
+        addexpense.setText("Add Expenses")
+        addexpense.clicked.connect(self.expenses)
+
+        #posisi widget
+        atur=QVBoxLayout(expenses)
+
+        dateline=QHBoxLayout(expenses)
+        dateline.addWidget(datel)
+        dateline.addWidget(date)
+
+        kategoriline=QHBoxLayout(expenses)
+        kategoriline.addWidget(kategori)
+        kategoriline.addWidget(self.kategorilist)
+
+        totalline=QHBoxLayout(expenses)
+        totalline.addWidget(totall)
+        totalline.addWidget(self.total)
+
+        ketline=QHBoxLayout(expenses)
+        ketline.addWidget(ketl)
+        ketline.addWidget(self.ket)
+
+        atur.addWidget(judul)
+        atur.addLayout(dateline)
+        atur.addLayout(kategoriline)
+        atur.addLayout(totalline)
+        atur.addLayout(ketline)
+        atur.addWidget(addexpense)
+
+        expenses.widget = QWidget(expenses)
+        expenses.widget.setLayout(atur)
+        expenses.show()
+
+    def kategoribaru (self):
+        category = self.tambahkategori.text()
+        budget = self.tambahbudget.text()
+        if category:
+            self.kategory.append(category)
+            self.budget.append(budget)
+            self.kategorilist.addItem(str(category)+"    "+"budget : Rp"+str(budget))
+            nilaibudget=list(map(int, self.budget))
+            total=sum(nilaibudget)
+            self.remaining.setText("Rp"+str(total))
+            self.countadd +=1
+
+            self.listkategoricount.addItem(str(self.countadd)+"  ")
+            self.listkategori.addItem(str(category)+"    ")
+            self.listkategoribajet.addItem("Rp"+str(budget))
+            
+            self.totalbajet.setText("Rp"+str(total))
+            self.tambahkategori.clear()
+            self.tambahbudget.clear()
+    
+    def gaterow (self):
+        self.countadd-=1
+        selected_items=self.listkategoricount.selectedItems()
+        if selected_items:
+            selected_item = selected_items [0]
+            self.row = self.listkategoricount.row(selected_item)
+            return self.row
+
+    def delcategory (self):
+        if self.row != -1:
+            item1 = self.listkategoricount.takeItem(self.row)
+            item2 = self.listkategori.takeItem(self.row)
+            item3 = self.listkategoribajet.takeItem(self.row)
+            del item1, item2, item3
+            posisi=self.row
+            self.kategory.pop(posisi)
+            self.budget.pop(posisi)
+            self.kategorilist.removeItem(posisi)
+            nilaibudget=list(map(int, self.budget))
+            self.totalsemua=sum(nilaibudget)
+            self.remaining.setText("Rp"+str(self.totalsemua))
+            
+            print(self.kategory)
+            print(self.budget)
+            return self.row
+    def expenses (self):
+        posisi = self.kategorilist.currentIndex()
+        kategori=self.kategory[posisi]
+        total = self.total.text()
+        keterangan = self.ket.text()
+        self.budget[posisi]=int(self.budget[posisi])-int(total)
+        nilaibudget=list(map(int, self.budget))
+        self.totalsemua=sum(nilaibudget)
+        self.remaining.setText("Rp"+str(self.totalsemua))
+        self.kategorilist.setItemText(posisi,str(self.kategory[posisi])+"    "+"budget : Rp"+str(self.budget[posisi]))
+        if total :
+            print(f"Category: {kategori}, Expense: {total}, Explanation: {keterangan}")
+            self.expense.addItem(f"Category: {kategori}, Expense: {total}, Explanation: {keterangan}")
+
+    def save_data(self,data):
+        with open('data.pkl', 'wb') as f:
+            pickle.dump(data, f)
+
+    def saved (self):
+        with open('data.pkl','wb') as f:
+            pickle.dump(data,f)
+        data = [self.kategorilist,  self.kategory,self.budget]
+        self.save_data (data)
+            
+
+if __name__ == "__main__":
+    app = QApplication(sys.argv)
+    expense_tracker = ExpenseTracker()
+    expense_tracker.show()
+    sys.exit(app.exec_())
